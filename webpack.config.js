@@ -9,21 +9,29 @@ module.exports = {
   },
   devtool: 'source-map',
   externals: {
-    'fs-extra' : 'commonjs fs-extra',
-    'lodash' : 'commonjs lodash',
+    'core-js/fn/object/assign' : 'commonjs core-js/fn/object/assign',
+    'core-js/fn/array/from' : 'commonjs core-js/fn/array/from',
+    'core-js/es6/set' : 'commonjs core-js/es6/set',
+    'core-js/es6/promise' : 'commonjs core-js/es6/promise',
+    'lodash': 'commonjs lodash',
+    'uuid': 'commonjs uuid',
+    'redux': 'commonjs redux',
+    'reselect': 'commonjs reselect',
     'moment' : 'commonjs moment',
     'recursive-readdir' : 'commonjs recursive-readdir',
-    'request' : 'commonjs request'
+    'fs-extra' : 'commonjs fs-extra',
+    'request' : 'commonjs request',
+    '@brightsign/bscore': 'commonjs @brightsign/bscore'
   },
-  target: 'electron',
+  // target: 'electron',
   resolve: {
     // Add '.ts' and '.tsx' as resolvable extensions.
-    extensions: [".ts", ".tsx", ".js", ".json"]
+    extensions: [".ts", ".js", ".json"]
   },
 
-  externals: {
-    'core-js/fn/object/assign' : 'commonjs core-js/fn/object/assign',
-  },
+  // externals: {
+  //   'core-js/fn/object/assign' : 'commonjs core-js/fn/object/assign',
+  // },
 
   module: {
     rules: [

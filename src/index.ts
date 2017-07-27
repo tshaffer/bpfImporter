@@ -1,2 +1,2 @@
 import importBPF from './bpfImporter';
-export = importBPF;
+export = { importBPF };
