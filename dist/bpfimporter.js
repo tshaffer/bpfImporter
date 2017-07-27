@@ -1,13 +1,13 @@
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
-		module.exports = factory(require("@brightsign/bscore"), require("redux"), require("core-js/es6/set"), require("core-js/fn/array/from"), require("core-js/fn/object/assign"), require("lodash"), require("reselect"), require("uuid"));
+		module.exports = factory(require("@brightsign/bscore"), require("redux"), require("core-js/es6/set"), require("core-js/fn/array/from"), require("core-js/fn/object/assign"), require("lodash"), require("reselect"), require("uuid"), require("fs-extra"));
 	else if(typeof define === 'function' && define.amd)
-		define(["@brightsign/bscore", "redux", "core-js/es6/set", "core-js/fn/array/from", "core-js/fn/object/assign", "lodash", "reselect", "uuid"], factory);
+		define(["@brightsign/bscore", "redux", "core-js/es6/set", "core-js/fn/array/from", "core-js/fn/object/assign", "lodash", "reselect", "uuid", "fs-extra"], factory);
 	else if(typeof exports === 'object')
-		exports["bpfimporter"] = factory(require("@brightsign/bscore"), require("redux"), require("core-js/es6/set"), require("core-js/fn/array/from"), require("core-js/fn/object/assign"), require("lodash"), require("reselect"), require("uuid"));
+		exports["bpfimporter"] = factory(require("@brightsign/bscore"), require("redux"), require("core-js/es6/set"), require("core-js/fn/array/from"), require("core-js/fn/object/assign"), require("lodash"), require("reselect"), require("uuid"), require("fs-extra"));
 	else
-		root["bpfimporter"] = factory(root["@brightsign/bscore"], root["redux"], root["core-js/es6/set"], root["core-js/fn/array/from"], root["core-js/fn/object/assign"], root["lodash"], root["reselect"], root["uuid"]);
-})(this, function(__WEBPACK_EXTERNAL_MODULE_25__, __WEBPACK_EXTERNAL_MODULE_26__, __WEBPACK_EXTERNAL_MODULE_74__, __WEBPACK_EXTERNAL_MODULE_75__, __WEBPACK_EXTERNAL_MODULE_76__, __WEBPACK_EXTERNAL_MODULE_77__, __WEBPACK_EXTERNAL_MODULE_78__, __WEBPACK_EXTERNAL_MODULE_79__) {
+		root["bpfimporter"] = factory(root["@brightsign/bscore"], root["redux"], root["core-js/es6/set"], root["core-js/fn/array/from"], root["core-js/fn/object/assign"], root["lodash"], root["reselect"], root["uuid"], root["fs-extra"]);
+})(this, function(__WEBPACK_EXTERNAL_MODULE_25__, __WEBPACK_EXTERNAL_MODULE_26__, __WEBPACK_EXTERNAL_MODULE_74__, __WEBPACK_EXTERNAL_MODULE_75__, __WEBPACK_EXTERNAL_MODULE_76__, __WEBPACK_EXTERNAL_MODULE_77__, __WEBPACK_EXTERNAL_MODULE_78__, __WEBPACK_EXTERNAL_MODULE_79__, __WEBPACK_EXTERNAL_MODULE_207__) {
 return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
@@ -11012,7 +11012,7 @@ util.inherits = __webpack_require__(8);
 /*</replacement>*/
 
 /*<replacement>*/
-var debugUtil = __webpack_require__(207);
+var debugUtil = __webpack_require__(208);
 var debug = void 0;
 if (debugUtil && debugUtil.debuglog) {
   debug = debugUtil.debuglog('stream');
@@ -12206,7 +12206,7 @@ module.exports = require("uuid");
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var path = __webpack_require__(197);
-var fs = __webpack_require__(!(function webpackMissingModule() { var e = new Error("Cannot find module \"fs\""); e.code = 'MODULE_NOT_FOUND'; throw e; }()));
+var fse = __webpack_require__(207);
 var xml2js = __webpack_require__(61);
 var redux_1 = __webpack_require__(26);
 var redux_thunk_1 = __webpack_require__(181);
@@ -12227,14 +12227,13 @@ function executeImportBPF(bpfFilePath, dispatch, getState) {
         }).then(function (bpf) {
             console.log(bpf);
             signBuilder_1.createSign(bpf, dispatch, getState);
-            var basename = path.basename(bpfFilePath);
+            var basename = path.basename(bpfFilePath, '.bpf');
             var dirname = path.dirname(bpfFilePath);
             var extname = path.extname(bpfFilePath);
-            var parsedPath = path.parse(bpfFilePath);
-            var bpfxPath = path.join(dirname, parsedPath.name + ".bpfx");
+            var bpfxPath = path.join(dirname, basename + '.bpfx');
             var signState = bsdatamodel_1.dmGetSignState(getState().bsdm);
             var bpfStr = JSON.stringify(signState, null, '\t');
-            fs.writeFile(bpfxPath, bpfStr, function (err) {
+            fse.writeFile(bpfxPath, bpfStr, function (err) {
                 if (err)
                     reject(err);
                 else
@@ -12246,7 +12245,7 @@ function executeImportBPF(bpfFilePath, dispatch, getState) {
 }
 function readFile(filePath) {
     return new Promise(function (resolve, reject) {
-        fs.readFile(filePath, function (err, buf) {
+        fse.readFile(filePath, function (err, buf) {
             if (err) {
                 reject(err);
             }
@@ -19353,6 +19352,12 @@ function config (name) {
 
 /***/ }),
 /* 207 */
+/***/ (function(module, exports) {
+
+module.exports = require("fs-extra");
+
+/***/ }),
+/* 208 */
 /***/ (function(module, exports) {
 
 /* (ignored) */

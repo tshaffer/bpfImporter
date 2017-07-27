@@ -13,6 +13,7 @@ module.exports = {
     'core-js/fn/array/from' : 'commonjs core-js/fn/array/from',
     'core-js/es6/set' : 'commonjs core-js/es6/set',
     'core-js/es6/promise' : 'commonjs core-js/es6/promise',
+    'fs-extra': 'commonjs fs-extra',
     'lodash': 'commonjs lodash',
     'uuid': 'commonjs uuid',
     'redux': 'commonjs redux',

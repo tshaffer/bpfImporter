@@ -1,5 +1,6 @@
 import * as path from 'path';
-import * as fs from 'fs';
+import * as fse from 'fs-extra';
+// import * as fs from 'fs';
 const xml2js : any = require('xml2js');
 
 import { createStore, applyMiddleware } from 'redux';
@@ -40,17 +41,19 @@ function executeImportBPF(bpfFilePath: string, dispatch: Function, getState: Fun
       createSign(bpf, dispatch, getState);
 
       // sign in bsdm has been created - write it to a file
-      let basename : string = path.basename(bpfFilePath);
+      // let basename : string = path.basename(bpfFilePath);
+      let basename : string = path.basename(bpfFilePath, '.bpf');
       let dirname : string = path.dirname(bpfFilePath);
       let extname : string = path.extname(bpfFilePath);
-      let parsedPath : any = path.parse(bpfFilePath);
+      // let parsedPath : any = path.parse(bpfFilePath);
 
-      const bpfxPath = path.join(dirname, parsedPath.name + ".bpfx");
+      // const bpfxPath = path.join(dirname, parsedPath.name + ".bpfx");
+      const bpfxPath = path.join(dirname, basename + '.bpfx');
 
       let signState: DmSignState = dmGetSignState(getState().bsdm);
 
       const bpfStr = JSON.stringify(signState, null, '\t');
-      fs.writeFile(bpfxPath, bpfStr, (err) => {
+      fse.writeFile(bpfxPath, bpfStr, (err) => {
         if(err)
           reject(err);
         else
@@ -66,7 +69,7 @@ function executeImportBPF(bpfFilePath: string, dispatch: Function, getState: Fun
 function readFile(filePath : string) : Promise<Buffer> {
 
   return new Promise( (resolve, reject) => {
-    fs.readFile(filePath, (err, buf) => {
+    fse.readFile(filePath, (err, buf) => {
       if (err) {
         reject(err);
       }
