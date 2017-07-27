@@ -12213,17 +12213,15 @@ var bsdatamodel_1 = __webpack_require__(27);
 var reducers_1 = __webpack_require__(84);
 var bpfToJson_1 = __webpack_require__(81);
 var signBuilder_1 = __webpack_require__(83);
-function importBPF(bpfFilePath) {
+function importBPF(xmlBuffer) {
     console.log('importBPF entry');
     var store = redux_1.createStore(reducers_1.default, redux_1.applyMiddleware(redux_thunk_1.default));
-    return executeImportBPF(bpfFilePath, store.dispatch, store.getState);
+    return executeImportBPF(xmlBuffer, store.dispatch, store.getState);
 }
 exports.default = importBPF;
-function executeImportBPF(bpfFilePath, dispatch, getState) {
+function executeImportBPF(xmlBuffer, dispatch, getState) {
     return new Promise(function (resolve, reject) {
-        readFile(bpfFilePath).then(function (bpfBuf) {
-            return bpfToJson_1.bpfToJson(bpfBuf);
-        }).then(function (bpf) {
+        bpfToJson_1.bpfToJson(xmlBuffer).then(function (bpf) {
             console.log(bpf);
             signBuilder_1.createSign(bpf, dispatch, getState);
             var signState = bsdatamodel_1.dmGetSignState(getState().bsdm);

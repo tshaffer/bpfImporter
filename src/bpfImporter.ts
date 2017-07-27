@@ -18,7 +18,7 @@ import reducers from './store/reducers';
 import { bpfToJson } from './bpfToJson';
 import { createSign } from './signBuilder';
 
-export default function importBPF(bpfFilePath: string): Promise<DmSignState> {
+export default function importBPF(xmlBuffer: string): Promise<DmSignState> {
 
   console.log('importBPF entry');
 
@@ -29,15 +29,16 @@ export default function importBPF(bpfFilePath: string): Promise<DmSignState> {
     ),
   );
 
-  return executeImportBPF(bpfFilePath, store.dispatch, store.getState);
+  return executeImportBPF(xmlBuffer, store.dispatch, store.getState);
 }
 
-function executeImportBPF(bpfFilePath: string, dispatch: Function, getState: Function): Promise<DmSignState> {
+function executeImportBPF(xmlBuffer: string, dispatch: Function, getState: Function): Promise<DmSignState> {
 
   return new Promise( (resolve, reject) => {
-    readFile(bpfFilePath).then( (bpfBuf : any) => {
-      return bpfToJson(bpfBuf);
-    }).then((bpf : any) => {
+    bpfToJson(xmlBuffer).then( (bpf : any) => {
+    // readFile(bpfFilePath).then( (bpfBuf : any) => {
+    //   return bpfToJson(bpfBuf);
+    // }).then((bpf : any) => {
       console.log(bpf);
       createSign(bpf, dispatch, getState);
 
