@@ -4,7 +4,7 @@ import * as Converters from './converters';
 
 export function bpfToJson(xmlBPF : any) : any {
 
-  return new Promise( (resolve, reject) => {
+  return new Promise( (resolve) => {
     stringToJson(xmlBPF).then( (jsonBPF: any) => {
       const bpf : any = fixJsonBPF(jsonBPF);
       resolve(bpf);
@@ -20,6 +20,7 @@ function fixJsonBPF(rawBPF : any) : any {
   const rawPresentationParameters : any = rawBrightAuthor.$;
   const rawMetadata = rawBrightAuthor.meta;
 
+  // TODO
   // check for array vs. non array for zones
   const rawZones = rawBrightAuthor.zones;
   const rawZone = rawZones.zone;
