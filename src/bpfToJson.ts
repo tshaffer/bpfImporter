@@ -270,10 +270,13 @@ function fixZonePlaylistStates(rawPlaylistItems: any) : any {
       case 'imageItem': {
         playlistStates.push(fixImageItem(rawPlaylistItem));
         break;
-
       }
       case 'videoItem': {
         playlistStates.push(fixVideoItem(rawPlaylistItem));
+        break;
+      }
+      case 'liveVideoItem': {
+        playlistStates.push(fixLiveVideoItem(rawPlaylistItem));
         break;
       }
     }
@@ -312,6 +315,21 @@ function fixVideoItem(rawVideoItem : any) : any {
   videoItem.type = 'videoItem';
 
   return videoItem;
+}
+
+function fixLiveVideoItem(rawLiveVideoItem: any) : any {
+
+  const liveVideoParametersSpec: any[] = [
+
+    { name: 'volume', type: 'number'},
+    { name: 'timeOnScreen', type: 'number'},
+    { name: 'overscan', type: 'boolean'}
+  ];
+
+  let liveVideoItem: any = fixJson(liveVideoParametersSpec, rawLiveVideoItem);
+  liveVideoItem.type = 'liveVideoItem';
+
+  return liveVideoItem;
 }
 
 function fixRawFileItem(rawFileItem : any) : any {

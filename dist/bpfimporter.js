@@ -8510,6 +8510,10 @@ function fixZonePlaylistStates(rawPlaylistItems) {
                 playlistStates.push(fixVideoItem(rawPlaylistItem));
                 break;
             }
+            case 'liveVideoItem': {
+                playlistStates.push(fixLiveVideoItem(rawPlaylistItem));
+                break;
+            }
         }
     });
     return playlistStates;
@@ -8538,6 +8542,16 @@ function fixVideoItem(rawVideoItem) {
     videoItem.file = fixRawFileItem(rawVideoItem.file.$);
     videoItem.type = 'videoItem';
     return videoItem;
+}
+function fixLiveVideoItem(rawLiveVideoItem) {
+    var liveVideoParametersSpec = [
+        { name: 'volume', type: 'number' },
+        { name: 'timeOnScreen', type: 'number' },
+        { name: 'overscan', type: 'boolean' }
+    ];
+    var liveVideoItem = fixJson(liveVideoParametersSpec, rawLiveVideoItem);
+    liveVideoItem.type = 'liveVideoItem';
+    return liveVideoItem;
 }
 function fixRawFileItem(rawFileItem) {
     var imageItemParametersSpec = [
@@ -8889,6 +8903,20 @@ function buildZonePlaylist(bpfZone, zoneId, dispatch) {
                     }));
                 }
                 break;
+            }
+            case 'liveVideoItem': {
+                var overscan = state.overscan, timeOnScreen = state.timeOnScreen, volume = state.volume;
+                debugger;
+                var liveVideoContentItem = bsdatamodel_1.dmCreateLiveVideoContentItem('liveVideo', volume, overscan);
+                var addMediaStateThunkAction = bsdatamodel_1.dmAddMediaState('liveVideo', zone, liveVideoContentItem);
+                var mediaStateAction = dispatch(addMediaStateThunkAction);
+                var mediaStateParams = mediaStateAction.payload;
+                var eventAction = dispatch(bsdatamodel_1.dmAddEvent('timeout', bscore_1.EventType.Timer, mediaStateParams.id, { interval: timeOnScreen }));
+                var eventParams = eventAction.payload;
+                mediaStateIds.push(mediaStateParams.id);
+                eventIds.push(eventParams.id);
+                transitionTypes.push(null);
+                transitionDurations.push(0);
             }
             default:
                 break;

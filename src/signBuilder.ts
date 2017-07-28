@@ -48,6 +48,7 @@ import {
   DmAudioZonePropertyData,
   DmImageZoneProperties,
   DmImageZonePropertyData,
+  DmLiveVideoContentItem,
   DmMediaStateContainer,
   DmSerialPortList,
   DmSignMetadata,
@@ -72,6 +73,7 @@ import {
   dmAddTransition,
   dmAddZone,
   dmCreateAssetItemFromLocalFile,
+  dmCreateLiveVideoContentItem,
   dmGetZoneMediaStateContainer,
   dmGetSignState,
   dmNewSign,
@@ -446,6 +448,7 @@ function buildZonePlaylist(bpfZone : any, zoneId : BsDmId, dispatch : Function) 
         transitionTypes.push(null);
         transitionDurations.push(0);
 
+        // TODO - do this for all states?
         if (index === 0) {
           dispatch(dmUpdateZone({
             id: zoneId,
@@ -455,6 +458,29 @@ function buildZonePlaylist(bpfZone : any, zoneId : BsDmId, dispatch : Function) 
 
         break;
       }
+
+      case 'liveVideoItem': {
+        const { overscan, timeOnScreen, volume } = state;
+
+        debugger;
+
+        // TODO - name?
+        const liveVideoContentItem : DmLiveVideoContentItem = dmCreateLiveVideoContentItem('liveVideo', volume, overscan)
+
+        let addMediaStateThunkAction : BsDmThunkAction<MediaStateParams> = dmAddMediaState('liveVideo', zone, liveVideoContentItem);
+        let mediaStateAction : MediaStateAction = dispatch(addMediaStateThunkAction);
+        let mediaStateParams : MediaStateParams = mediaStateAction.payload;
+
+        let eventAction : any = dispatch(dmAddEvent('timeout', EventType.Timer, mediaStateParams.id,
+          { interval : timeOnScreen } ));
+        let eventParams : EventParams = eventAction.payload;
+
+        mediaStateIds.push(mediaStateParams.id);
+        eventIds.push(eventParams.id);
+        transitionTypes.push(null);
+        transitionDurations.push(0);
+      }
+
       default:
         break;
     }
