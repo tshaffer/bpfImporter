@@ -1,5 +1,11 @@
+import * as path from 'path';
+
 import {
+  getEnumKeyOfValue,
+  AssetLocation,
+  AssetType,
   AudioMappingType,
+
   AudioMixModeType,
   AudioModeType,
   AudioOutputSelectionType,
@@ -7,16 +13,29 @@ import {
   BsAssetItem,
   BsColor,
   BsRect,
+  DeviceWebPageDisplay,
+  GraphicsZOrderType,
   EventType,
   ImageModeType,
+  LanguageType,
+  LanguageKeyType,
   LiveVideoInputType,
   LiveVideoStandardType,
   MediaType,
+  MonitorOrientationType,
+  MonitorOverscanType,
   MosaicMaxContentResolutionType,
+  TouchCursorDisplayModeType,
   TransitionType,
+  UdpAddressType,
+  VideoConnectorType,
   ViewModeType,
   ZoneType,
 } from '@brightsign/bscore';
+
+import {
+  getAssetItemFromFile
+} from '@brightsign/fsconnector';
 
 import {
   AudioSignPropertyMapParams,
@@ -63,6 +82,10 @@ import {
   dmUpdateZoneProperties,
 } from '@brightsign/bsdatamodel';
 
+import {
+  getBsAssetCollection
+} from '@brightsign/bs-content-manager';
+
 import * as Converters from './converters';
 
 export function createSign(bpf : any, dispatch: Function, getState: Function) : void {
@@ -76,6 +99,10 @@ export function createSign(bpf : any, dispatch: Function, getState: Function) : 
 function newSign(bpf : any, dispatch: Function) {
   const { name, videoMode, model } = bpf.metadata;
   dispatch(dmNewSign(name, videoMode, model));
+}
+
+function checkEnumKeyOfValue(enumType : any, value : string) : string | null {
+  return getEnumKeyOfValue(enumType, value);
 }
 
 function setSignProperties(bpf : any, dispatch: Function, getState: Function) {
@@ -116,6 +143,18 @@ function setSignProperties(bpf : any, dispatch: Function, getState: Function) {
     udpReceiverPort,
     videoConnector,
   } = bpf.metadata;
+
+  if (!checkEnumKeyOfValue(DeviceWebPageDisplay, deviceWebPageDisplay)) debugger;
+  if (!checkEnumKeyOfValue(GraphicsZOrderType, graphicsZOrder)) debugger;
+  if (!checkEnumKeyOfValue(LanguageType, language)) debugger;
+  if (!checkEnumKeyOfValue(LanguageKeyType, languageKey)) debugger;
+  if (!checkEnumKeyOfValue(MonitorOrientationType, monitorOrientation)) debugger;
+
+  // TODO NoOverscan vs. noOverscan
+  // if (!checkEnumKeyOfValue(MonitorOverscanType, monitorOverscan)) debugger;
+  // if (!checkEnumKeyOfValue(TouchCursorDisplayModeType, touchCursorDisplayMode)) debugger;
+  if (!checkEnumKeyOfValue(UdpAddressType, udpDestinationAddressType)) debugger;
+  if (!checkEnumKeyOfValue(VideoConnectorType, videoConnector)) debugger;
 
   const { a, r, g, b } = bpf.metadata.backgroundScreenColor;
   const backgroundScreenColor : BsColor = { a, r, g, b };
@@ -251,12 +290,31 @@ function setZoneProperties(bpfZone : any, zoneId : BsDmId, zoneType : ZoneType, 
 
       const zoneSpecificParameters = bpfZone.zoneSpecificParameters;
 
+      let imageMode : ImageModeType;
+      const bpfImageMode : string = zoneSpecificParameters.imageMode;
+      switch (bpfImageMode) {
+        case 'Center Image':
+          imageMode = ImageModeType.CenterImage;
+          break;
+        case 'Scale to Fill and Crop':
+          imageMode = ImageModeType.FillAndCrop;
+          break;
+        case 'Scale to Fill':
+          imageMode = ImageModeType.ScaleToFill;
+          break;
+        case 'Scale to Fit':
+          imageMode = ImageModeType.ScaleToFit;
+          break;
+      }
+
       let imageZonePropertyData : DmImageZonePropertyData = {
-        imageMode : ImageModeType.CenterImage,
+        imageMode,
       };
       let imageZoneProperties : DmImageZoneProperties = imageZonePropertyData;
 
       let audioOutputAssignmentMap : DmAudioOutputAssignmentMap = buildAudioOutputAssignmentMap(zoneSpecificParameters);
+
+      if (!checkEnumKeyOfValue(AudioMixModeType, zoneSpecificParameters.audioMixMode)) debugger;
 
       let audioZonePropertyData : DmAudioZonePropertyData = {
         audioOutput : Converters.getAudioOutput(zoneSpecificParameters.audioOutput),
@@ -268,6 +326,11 @@ function setZoneProperties(bpfZone : any, zoneId : BsDmId, zoneType : ZoneType, 
         minimumVolume : zoneSpecificParameters.minimumVolume,
         maximumVolume : zoneSpecificParameters.maximumVolume,
       };
+
+      if (!checkEnumKeyOfValue(LiveVideoInputType, zoneSpecificParameters.liveVideoInput)) debugger;
+      if (!checkEnumKeyOfValue(LiveVideoStandardType, zoneSpecificParameters.liveVideoStandard)) debugger;
+      if (!checkEnumKeyOfValue(AudioMixModeType, zoneSpecificParameters.audioMixMode)) debugger;
+      // if (!checkEnumKeyOfValue(MosaicMaxContentResolutionType, zoneSpecificParameters.audioMixMode)) debugger;
 
       let videoZonePropertyData : DmVideoZonePropertyData = {
         viewMode : Converters.getViewMode(zoneSpecificParameters.viewMode),
@@ -340,7 +403,39 @@ function buildZonePlaylist(bpfZone : any, zoneId : BsDmId, dispatch : Function) 
       case 'imageItem': {
         const { file, fileIsLocal, slideDelayInterval, transitionDuration, videoPlayerRequired } = state;
         // TODO - specify additional parameters
-        const bsAssetItem  : BsAssetItem = dmCreateAssetItemFromLocalFile(file.path, '', MediaType.Image);
+
+        debugger;
+
+        // TODO
+        // windows folders that may be encountered during testing and hacks to convert to windows paths
+        if (file.path.startsWith("\\\\Mac\\Home\\Documents\\All Media\\")) {
+          const bpfContentDirectoryPath = file.path;
+          const bpfPartialFilePath = file.path.substr(31);
+
+          const baconPartialFilePath = bpfPartialFilePath.replace("\\", "/");
+          const baconPartialFolderPath = "/Users/tedshaffer/Documents/All Media/";
+          file.path = path.join(baconPartialFolderPath, baconPartialFilePath);
+        }
+        // also check desktop folders that I'm using
+
+        const bsAssetItem : BsAssetItem = getAssetItemFromFile(file.path);
+
+        // const bsAssetItem  : BsAssetItem = dmCreateAssetItemFromLocalFile(file.path, '', MediaType.Image);
+
+        // HACK - the following is NOT working!
+        // const folderPath = path.dirname(file.path);
+        // const folderPath = '/Users/tedshaffer/Documents/All Media/Images';
+        // const folderPath = "/Users/tedshaffer/Pictures/BangPhotos";
+        // const lastIndexSlash = file.path.lastIndexOf('\\');
+        // const folderPath = file.path.substring(0, lastIndexSlash);
+        //
+        // let bsAssetItem : BsAssetItem;
+        // const assetCollection = getBsAssetCollection(AssetLocation.Local, AssetType.Content, folderPath, { folders: true });
+        // assetCollection.update().then((assetNames) => {
+        //   const asset = assetCollection.getAsset(name);
+        //   bsAssetItem = asset.assetItem;
+        // });
+
         let addMediaStateThunkAction : BsDmThunkAction<MediaStateParams> = dmAddMediaState(bsAssetItem.name, zone, bsAssetItem);
         let mediaStateAction : MediaStateAction = dispatch(addMediaStateThunkAction);
         let mediaStateParams : MediaStateParams = mediaStateAction.payload;
@@ -359,7 +454,10 @@ function buildZonePlaylist(bpfZone : any, zoneId : BsDmId, dispatch : Function) 
       }
       case 'videoItem': {
         const { automaticallyLoop, file, fileIsLocal, videoDisplayMode, volume } = state;
+
+        debugger;
         const bsAssetItem  : BsAssetItem = dmCreateAssetItemFromLocalFile(file.path, '', MediaType.Video);
+
         let addMediaStateThunkAction : BsDmThunkAction<MediaStateParams> = dmAddMediaState(bsAssetItem.name, zone, bsAssetItem);
         let mediaStateAction : MediaStateAction = dispatch(addMediaStateThunkAction);
         let mediaStateParams : MediaStateParams = mediaStateAction.payload;
@@ -419,6 +517,4 @@ function addZones(bpf : any, dispatch : Function) {
 
     buildZonePlaylist(bpfZone, zoneId, dispatch);
   });
-
-
 }

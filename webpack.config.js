@@ -8,6 +8,8 @@ module.exports = {
     filename: 'bpfimporter.js'
   },
   devtool: 'source-map',
+  target: 'node',
+
   externals: {
     'core-js/fn/object/assign' : 'commonjs core-js/fn/object/assign',
     'core-js/fn/array/from' : 'commonjs core-js/fn/array/from',
