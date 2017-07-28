@@ -5685,6 +5685,62 @@ function getAudioMapping(bpfAudioMapping) {
     }
 }
 exports.getAudioMapping = getAudioMapping;
+function getImageMode(bpfImageMode) {
+    var imageMode;
+    switch (bpfImageMode) {
+        case 'Center Image':
+            imageMode = bscore_1.ImageModeType.CenterImage;
+            break;
+        case 'Scale to Fill and Crop':
+            imageMode = bscore_1.ImageModeType.FillAndCrop;
+            break;
+        case 'Scale to Fill':
+            imageMode = bscore_1.ImageModeType.ScaleToFill;
+            break;
+        case 'Scale to Fit':
+            imageMode = bscore_1.ImageModeType.ScaleToFit;
+            break;
+    }
+    return imageMode;
+}
+exports.getImageMode = getImageMode;
+function getMosaicMaxContentResolution(bpfMosaicMaxContentResolution) {
+    switch (bpfMosaicMaxContentResolution) {
+        case '_NotApplicable': {
+            return bscore_1.MosaicMaxContentResolutionType.NotApplicable;
+        }
+        case '_4K': {
+            return bscore_1.MosaicMaxContentResolutionType.FK;
+        }
+        case '_SD': {
+            return bscore_1.MosaicMaxContentResolutionType.SD;
+        }
+        case '_CIF': {
+            return bscore_1.MosaicMaxContentResolutionType.CIF;
+        }
+        case '_QCIF': {
+            return bscore_1.MosaicMaxContentResolutionType.QCIF;
+        }
+        case '_HD':
+        default: {
+            return bscore_1.MosaicMaxContentResolutionType.HD;
+        }
+    }
+}
+exports.getMosaicMaxContentResolution = getMosaicMaxContentResolution;
+function getAudioOutputType(bpfAudioOutputType) {
+    switch (bpfAudioOutputType) {
+        case 'PCM':
+            return bscore_1.AudioOutputType.Pcm;
+        case 'Passthrough':
+            return bscore_1.AudioOutputType.Passthrough;
+        case 'Multichannel':
+            return bscore_1.AudioOutputType.Multichannel;
+        case 'None':
+            return bscore_1.AudioOutputType.None;
+    }
+}
+exports.getAudioOutputType = getAudioOutputType;
 
 
 /***/ }),
@@ -8696,7 +8752,7 @@ function buildAudioOutputAssignmentMap(zoneSpecificParameters) {
     ];
     var audioOutputAssignments = {};
     for (var i = 0; i < bpfAudioOutputs.length; i++) {
-        audioOutputAssignments[bpfxAudioOutputs[i]] = zoneSpecificParameters[bpfAudioOutputs[i]];
+        audioOutputAssignments[bpfxAudioOutputs[i]] = Converters.getAudioOutputType(zoneSpecificParameters[bpfAudioOutputs[i]]);
     }
     return audioOutputAssignments;
 }
@@ -8704,22 +8760,7 @@ function setZoneProperties(bpfZone, zoneId, zoneType, dispatch) {
     switch (zoneType) {
         case bscore_1.ZoneType.VideoOrImages: {
             var zoneSpecificParameters = bpfZone.zoneSpecificParameters;
-            var imageMode = void 0;
-            var bpfImageMode = zoneSpecificParameters.imageMode;
-            switch (bpfImageMode) {
-                case 'Center Image':
-                    imageMode = bscore_1.ImageModeType.CenterImage;
-                    break;
-                case 'Scale to Fill and Crop':
-                    imageMode = bscore_1.ImageModeType.FillAndCrop;
-                    break;
-                case 'Scale to Fill':
-                    imageMode = bscore_1.ImageModeType.ScaleToFill;
-                    break;
-                case 'Scale to Fit':
-                    imageMode = bscore_1.ImageModeType.ScaleToFit;
-                    break;
-            }
+            var imageMode = Converters.getImageMode(zoneSpecificParameters.imageMode);
             var imageZonePropertyData = {
                 imageMode: imageMode,
             };
@@ -8754,7 +8795,7 @@ function setZoneProperties(bpfZone, zoneId, zoneType, dispatch) {
                 hue: zoneSpecificParameters.hue,
                 zOrderFront: zoneSpecificParameters.zOrderFront,
                 mosaic: zoneSpecificParameters.mosaic,
-                maxContentResolution: bscore_1.MosaicMaxContentResolutionType.NotApplicable,
+                maxContentResolution: Converters.getMosaicMaxContentResolution(zoneSpecificParameters.maxContentResolution),
                 mosaicDecoderName: ''
             };
             var videoZoneProperties = Object.assign({}, videoZonePropertyData, audioZonePropertyData);
@@ -8795,6 +8836,16 @@ function setZoneProperties(bpfZone, zoneId, zoneType, dispatch) {
         }
     }
 }
+function fixFilePath(bpfFilePath) {
+    var baconFilePath = bpfFilePath;
+    if (bpfFilePath.startsWith("\\\\Mac\\Home\\Documents\\All Media\\")) {
+        var bpfPartialFilePath = bpfFilePath.substr(31);
+        var baconPartialFilePath = bpfPartialFilePath.replace("\\", "/");
+        var baconPartialFolderPath = "/Users/tedshaffer/Documents/All Media/";
+        baconFilePath = path.join(baconPartialFolderPath, baconPartialFilePath);
+    }
+    return baconFilePath;
+}
 function buildZonePlaylist(bpfZone, zoneId, dispatch) {
     var mediaStateIds = [];
     var eventIds = [];
@@ -8805,15 +8856,8 @@ function buildZonePlaylist(bpfZone, zoneId, dispatch) {
         switch (state.type) {
             case 'imageItem': {
                 var file = state.file, fileIsLocal = state.fileIsLocal, slideDelayInterval = state.slideDelayInterval, transitionDuration = state.transitionDuration, videoPlayerRequired = state.videoPlayerRequired;
-                debugger;
-                if (file.path.startsWith("\\\\Mac\\Home\\Documents\\All Media\\")) {
-                    var bpfContentDirectoryPath = file.path;
-                    var bpfPartialFilePath = file.path.substr(31);
-                    var baconPartialFilePath = bpfPartialFilePath.replace("\\", "/");
-                    var baconPartialFolderPath = "/Users/tedshaffer/Documents/All Media/";
-                    file.path = path.join(baconPartialFolderPath, baconPartialFilePath);
-                }
-                var bsAssetItem = fsconnector_1.getAssetItemFromFile(file.path);
+                var filePath = fixFilePath(file.path);
+                var bsAssetItem = fsconnector_1.getAssetItemFromFile(filePath);
                 var addMediaStateThunkAction = bsdatamodel_1.dmAddMediaState(bsAssetItem.name, zone, bsAssetItem);
                 var mediaStateAction = dispatch(addMediaStateThunkAction);
                 var mediaStateParams = mediaStateAction.payload;
@@ -8827,8 +8871,8 @@ function buildZonePlaylist(bpfZone, zoneId, dispatch) {
             }
             case 'videoItem': {
                 var automaticallyLoop = state.automaticallyLoop, file = state.file, fileIsLocal = state.fileIsLocal, videoDisplayMode = state.videoDisplayMode, volume = state.volume;
-                debugger;
-                var bsAssetItem = bsdatamodel_1.dmCreateAssetItemFromLocalFile(file.path, '', bscore_1.MediaType.Video);
+                var filePath = fixFilePath(file.path);
+                var bsAssetItem = fsconnector_1.getAssetItemFromFile(filePath);
                 var addMediaStateThunkAction = bsdatamodel_1.dmAddMediaState(bsAssetItem.name, zone, bsAssetItem);
                 var mediaStateAction = dispatch(addMediaStateThunkAction);
                 var mediaStateParams = mediaStateAction.payload;

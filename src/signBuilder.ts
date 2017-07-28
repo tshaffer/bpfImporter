@@ -278,7 +278,7 @@ function buildAudioOutputAssignmentMap(zoneSpecificParameters : any) : DmAudioOu
   let audioOutputAssignments: DmAudioOutputAssignmentMap = {};
 
   for (let i = 0; i < bpfAudioOutputs.length; i++) {
-    audioOutputAssignments[bpfxAudioOutputs[i]] = zoneSpecificParameters[bpfAudioOutputs[i]];
+    audioOutputAssignments[bpfxAudioOutputs[i]] = Converters.getAudioOutputType(zoneSpecificParameters[bpfAudioOutputs[i]]);
   }
 
   return audioOutputAssignments;
@@ -290,22 +290,7 @@ function setZoneProperties(bpfZone : any, zoneId : BsDmId, zoneType : ZoneType, 
 
       const zoneSpecificParameters = bpfZone.zoneSpecificParameters;
 
-      let imageMode : ImageModeType;
-      const bpfImageMode : string = zoneSpecificParameters.imageMode;
-      switch (bpfImageMode) {
-        case 'Center Image':
-          imageMode = ImageModeType.CenterImage;
-          break;
-        case 'Scale to Fill and Crop':
-          imageMode = ImageModeType.FillAndCrop;
-          break;
-        case 'Scale to Fill':
-          imageMode = ImageModeType.ScaleToFill;
-          break;
-        case 'Scale to Fit':
-          imageMode = ImageModeType.ScaleToFit;
-          break;
-      }
+      const imageMode : ImageModeType = Converters.getImageMode(zoneSpecificParameters.imageMode);
 
       let imageZonePropertyData : DmImageZonePropertyData = {
         imageMode,
@@ -330,8 +315,8 @@ function setZoneProperties(bpfZone : any, zoneId : BsDmId, zoneType : ZoneType, 
       if (!checkEnumKeyOfValue(LiveVideoInputType, zoneSpecificParameters.liveVideoInput)) debugger;
       if (!checkEnumKeyOfValue(LiveVideoStandardType, zoneSpecificParameters.liveVideoStandard)) debugger;
       if (!checkEnumKeyOfValue(AudioMixModeType, zoneSpecificParameters.audioMixMode)) debugger;
-      // if (!checkEnumKeyOfValue(MosaicMaxContentResolutionType, zoneSpecificParameters.audioMixMode)) debugger;
 
+      // TODO mosaicDecoderName if mosiac is invoked
       let videoZonePropertyData : DmVideoZonePropertyData = {
         viewMode : Converters.getViewMode(zoneSpecificParameters.viewMode),
         liveVideoInput : zoneSpecificParameters.liveVideoInput,
@@ -343,7 +328,7 @@ function setZoneProperties(bpfZone : any, zoneId : BsDmId, zoneType : ZoneType, 
         hue : zoneSpecificParameters.hue,
         zOrderFront : zoneSpecificParameters.zOrderFront,
         mosaic : zoneSpecificParameters.mosaic,
-        maxContentResolution : MosaicMaxContentResolutionType.NotApplicable,
+        maxContentResolution : Converters.getMosaicMaxContentResolution(zoneSpecificParameters.maxContentResolution),
         mosaicDecoderName: ''
       };
 
@@ -391,7 +376,28 @@ function setZoneProperties(bpfZone : any, zoneId : BsDmId, zoneType : ZoneType, 
   }
 }
 
+// TODO HACK HACK HACK
+// windows folders that may be encountered during testing and hacks to convert to MAC paths
+function fixFilePath(bpfFilePath : string) : string {
+
+  let baconFilePath = bpfFilePath;
+
+  if (bpfFilePath.startsWith("\\\\Mac\\Home\\Documents\\All Media\\")) {
+
+    const bpfPartialFilePath = bpfFilePath.substr(31);
+
+    const baconPartialFilePath = bpfPartialFilePath.replace("\\", "/");
+    const baconPartialFolderPath = "/Users/tedshaffer/Documents/All Media/";
+
+    baconFilePath = path.join(baconPartialFolderPath, baconPartialFilePath);
+  }
+
+  return baconFilePath;
+}
+
+
 function buildZonePlaylist(bpfZone : any, zoneId : BsDmId, dispatch : Function) {
+
   let mediaStateIds: BsDmId[] = [];
   let eventIds: BsDmId[] = [];
   let transitionTypes : TransitionType[] = [];
@@ -404,37 +410,8 @@ function buildZonePlaylist(bpfZone : any, zoneId : BsDmId, dispatch : Function) 
         const { file, fileIsLocal, slideDelayInterval, transitionDuration, videoPlayerRequired } = state;
         // TODO - specify additional parameters
 
-        debugger;
-
-        // TODO
-        // windows folders that may be encountered during testing and hacks to convert to windows paths
-        if (file.path.startsWith("\\\\Mac\\Home\\Documents\\All Media\\")) {
-          const bpfContentDirectoryPath = file.path;
-          const bpfPartialFilePath = file.path.substr(31);
-
-          const baconPartialFilePath = bpfPartialFilePath.replace("\\", "/");
-          const baconPartialFolderPath = "/Users/tedshaffer/Documents/All Media/";
-          file.path = path.join(baconPartialFolderPath, baconPartialFilePath);
-        }
-        // also check desktop folders that I'm using
-
-        const bsAssetItem : BsAssetItem = getAssetItemFromFile(file.path);
-
-        // const bsAssetItem  : BsAssetItem = dmCreateAssetItemFromLocalFile(file.path, '', MediaType.Image);
-
-        // HACK - the following is NOT working!
-        // const folderPath = path.dirname(file.path);
-        // const folderPath = '/Users/tedshaffer/Documents/All Media/Images';
-        // const folderPath = "/Users/tedshaffer/Pictures/BangPhotos";
-        // const lastIndexSlash = file.path.lastIndexOf('\\');
-        // const folderPath = file.path.substring(0, lastIndexSlash);
-        //
-        // let bsAssetItem : BsAssetItem;
-        // const assetCollection = getBsAssetCollection(AssetLocation.Local, AssetType.Content, folderPath, { folders: true });
-        // assetCollection.update().then((assetNames) => {
-        //   const asset = assetCollection.getAsset(name);
-        //   bsAssetItem = asset.assetItem;
-        // });
+        const filePath = fixFilePath(file.path);
+        const bsAssetItem : BsAssetItem = getAssetItemFromFile(filePath);
 
         let addMediaStateThunkAction : BsDmThunkAction<MediaStateParams> = dmAddMediaState(bsAssetItem.name, zone, bsAssetItem);
         let mediaStateAction : MediaStateAction = dispatch(addMediaStateThunkAction);
@@ -449,14 +426,13 @@ function buildZonePlaylist(bpfZone : any, zoneId : BsDmId, dispatch : Function) 
         transitionTypes.push(TransitionType.NoEffect);
         transitionDurations.push(transitionDuration);
 
-
         break;
       }
       case 'videoItem': {
         const { automaticallyLoop, file, fileIsLocal, videoDisplayMode, volume } = state;
 
-        debugger;
-        const bsAssetItem  : BsAssetItem = dmCreateAssetItemFromLocalFile(file.path, '', MediaType.Video);
+        const filePath = fixFilePath(file.path);
+        const bsAssetItem : BsAssetItem = getAssetItemFromFile(filePath);
 
         let addMediaStateThunkAction : BsDmThunkAction<MediaStateParams> = dmAddMediaState(bsAssetItem.name, zone, bsAssetItem);
         let mediaStateAction : MediaStateAction = dispatch(addMediaStateThunkAction);

@@ -1,10 +1,12 @@
 import {
   AudioOutputSelectionType,
+  AudioOutputType,
   AudioModeType,
   AudioMappingType,
   AudioMixModeType,
+  ImageModeType,
   TransitionType,
-  ViewModeType,
+  ViewModeType, MosaicMaxContentResolutionType,
 } from '@brightsign/bscore';
 
 export function stringToBool(s : string) : boolean {
@@ -231,5 +233,62 @@ export function getAudioMapping(bpfAudioMapping : string) : AudioMappingType {
       return AudioMappingType.Audio3;
     case 'Audio-all':
       return AudioMappingType.AudioAll;
+  }
+}
+
+export function getImageMode(bpfImageMode : string) : ImageModeType {
+
+  let imageMode : ImageModeType;
+  switch (bpfImageMode) {
+    case 'Center Image':
+      imageMode = ImageModeType.CenterImage;
+      break;
+    case 'Scale to Fill and Crop':
+      imageMode = ImageModeType.FillAndCrop;
+      break;
+    case 'Scale to Fill':
+      imageMode = ImageModeType.ScaleToFill;
+      break;
+    case 'Scale to Fit':
+      imageMode = ImageModeType.ScaleToFit;
+      break;
+  }
+  return imageMode;
+}
+
+export function getMosaicMaxContentResolution(bpfMosaicMaxContentResolution: string) : MosaicMaxContentResolutionType {
+  switch (bpfMosaicMaxContentResolution) {
+    case '_NotApplicable': {
+      return MosaicMaxContentResolutionType.NotApplicable;
+    }
+    case '_4K': {
+      return MosaicMaxContentResolutionType.FK;
+    }
+    case '_SD': {
+      return MosaicMaxContentResolutionType.SD;
+    }
+    case '_CIF': {
+      return MosaicMaxContentResolutionType.CIF;
+    }
+    case '_QCIF': {
+      return MosaicMaxContentResolutionType.QCIF;
+    }
+    case '_HD':
+    default: {
+      return MosaicMaxContentResolutionType.HD;
+    }
+  }
+}
+
+export function getAudioOutputType(bpfAudioOutputType : string) : AudioOutputType {
+  switch (bpfAudioOutputType) {
+    case 'PCM':
+      return AudioOutputType.Pcm;
+    case 'Passthrough':
+      return AudioOutputType.Passthrough;
+    case 'Multichannel':
+      return AudioOutputType.Multichannel;
+    case 'None':
+      return AudioOutputType.None;
   }
 }
