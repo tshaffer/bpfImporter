@@ -2,6 +2,7 @@ import * as path from 'path';
 
 import {
   getEnumKeyOfValue,
+  AccessType,
   AssetLocation,
   AssetType,
   AudioMappingType,
@@ -12,6 +13,7 @@ import {
   AudioOutputType,
   BsAssetItem,
   BsColor,
+  BsnFeedProperties,
   BsRect,
   DeviceWebPageDisplay,
   GraphicsZOrderType,
@@ -41,6 +43,8 @@ import {
   AudioSignPropertyMapParams,
   BsDmId,
   BsDmThunkAction,
+  DataFeedAction,
+  DataFeedParams,
   DmAudioOutputAssignmentMap,
   DmAudioSignProperties,
   DmAudioSignPropertyMap,
@@ -70,13 +74,16 @@ import {
   ZonePropertyUpdateAction,
   ZonePropertyUpdateParams,
   VideoOrImagesZonePropertyParams,
+  dmAddBsnDataFeed,
   dmAddEvent,
   dmAddMediaState,
+  dmAddDataFeed,
   dmAddTransition,
   dmAddZone,
   dmCreateAssetItemFromLocalFile,
   dmCreateLiveVideoContentItem,
   dmCreateVideoStreamContentItem,
+  dmGetEmptyParameterizedString,
   dmGetParameterizedStringFromString,
   dmGetZoneMediaStateContainer,
   dmGetSignState,
@@ -99,6 +106,7 @@ export function createSign(bpf : any, dispatch: Function, getState: Function) : 
   setSignProperties(bpf, dispatch, getState);
   setSignAudioProperties(bpf, dispatch);
   setSerialPortConfiguration(bpf, dispatch);
+  addLiveDataFeeds(bpf.metadata.liveDataFeeds, dispatch);
   addZones(bpf, dispatch);
 }
 
@@ -518,6 +526,45 @@ function buildZonePlaylist(bpfZone : any, zoneId : BsDmId, dispatch : Function) 
   const transitionAction : TransitionAction = dispatch(dmAddTransition('', eventIds[mediaStateIds.length - 1],
     mediaStateIds[0], transitionTypes[mediaStateIds.length - 1], transitionDurations[mediaStateIds.length - 1]));
 
+}
+
+function addLiveDataFeeds(liveDataFeeds: any, dispatch : Function) {
+
+  liveDataFeeds.forEach( (liveDataFeed : any) => {
+
+    let { autoGenerateUserVariables, dataFeedUse, name, parsePluginName, updateInterval, useHeadRequest, userVariableAccess, uvParserPluginName } = liveDataFeed;
+
+    // convert parserPluginName to BsDmId and use
+    // convert userVariableAccess to AccessType and use
+    let url : DmParameterizedString = dmGetEmptyParameterizedString();
+    if (liveDataFeed.liveDynamicPlaylist) {
+      url =  dmGetParameterizedStringFromString(liveDataFeed.liveDynamicPlaylist.url);
+
+      // const bsnFeedProperties : BsnFeedProperties = {
+      //   type: 'BSNDynamicPlaylist',
+      //   supportsAudio: liveDataFeed.liveDynamicPlaylist.supportsAudio,
+      //   supportsVideo: liveDataFeed.liveDynamicPlaylist.supportsVideo,  // TODO - is supportsVideo a field
+      //   supportsImages: true, // TODO
+      //   content : null,
+      //   location : AssetLocation.Bsn,
+      // };
+
+      /*
+       id: number;
+       name: string;
+       physicalPath: string;
+       fileSize: number;
+       fileHash: string;
+       creationDate: Date;
+       */
+    }
+
+    // dmAddBsnDataFeed(bsnDataFeed: BsnFeedProperties, usage: DataFeedUsageType, name?: string, updateInterval?: number, useHeadRequest?: boolean, parserPlugin?: BsDmId, autoGenerateUserVariables?: boolean, userVariableAccess?: AccessType, supportsAudio?: boolean, matchPlayerTags?: boolean): BsnDataFeedAction;
+
+    // TODO - should be creating a dmBsnDataFeed but documentation is not clear to me
+    let dataFeedAction : DataFeedAction = dmAddDataFeed(name, url, dataFeedUse, updateInterval, useHeadRequest, '', autoGenerateUserVariables, AccessType.Private);
+    dispatch(dataFeedAction);
+  });
 }
 
 function addZones(bpf : any, dispatch : Function) {

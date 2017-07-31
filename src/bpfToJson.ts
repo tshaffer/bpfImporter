@@ -130,8 +130,66 @@ function fixMetadata(rawMetadata: any) : any {
   let metadata : any = fixJson(metadataSpec, rawMetadata);
   metadata.backgroundScreenColor = fixBackgroundScreenColor(backgroundScreenColor);
   metadata.SerialPortConfigurations = fixSerialPortConfiguration(SerialPortConfiguration);
+  metadata.liveDataFeeds = fixLiveDataFeeds(liveDataFeeds);
 
   return metadata;
+}
+
+function fixLiveDataFeeds(rawLiveDataFeeds: any) : any {
+
+  let liveDataFeeds: any[] = [];
+
+  const liveDataFeedConfigurationSpec: any [] = [
+    { name: 'autoGenerateUserVariables', type: 'boolean'},
+    { name: 'dataFeedUse', type: 'string'},
+    { name: 'name', type: 'string'},
+    { name: 'dataFeedUse', type: 'string'},
+    { name: 'updateInterval', type: 'number'},
+    { name: 'useHeadRequest', type: 'boolean'},
+    { name: 'userVariableAccess', type: 'string'},
+  ];
+
+  rawLiveDataFeeds.liveDataFeed.forEach( (rawLiveDataFeed: any) => {
+    console.log(rawLiveDataFeed);
+
+    let liveDataFeed : any = fixJson(liveDataFeedConfigurationSpec, rawLiveDataFeed);
+
+    // TODO - put following into a function and reuse
+    if (typeof rawLiveDataFeed.parserPluginName === 'string') {
+      liveDataFeed.parserPluginName = rawLiveDataFeed.parserPluginName;
+    }
+    else {
+      liveDataFeed.parserPluginName = '';
+    }
+
+    if (typeof rawLiveDataFeed.uvParserPluginName === 'string') {
+      liveDataFeed.uvParserPluginName = rawLiveDataFeed.uvParserPluginName;
+    }
+    else {
+      liveDataFeed.uvParserPluginName = '';
+    }
+
+    // TODO - currently only supports liveDynamicPlaylist
+    if (rawLiveDataFeed.liveDynamicPlaylist) {
+      liveDataFeed.liveDynamicPlaylist = fixLiveDynamicPlaylist(rawLiveDataFeed.liveDynamicPlaylist);
+    }
+    liveDataFeeds.push(liveDataFeed);
+  });
+
+  return liveDataFeeds;
+}
+
+function fixLiveDynamicPlaylist(rawLiveDynamicPlaylist : any) : any {
+
+  const liveDynamicPlaylistSpec : any [] = [
+    { name: 'id', type: 'string'},
+    { name: 'name', type: 'string'},
+    { name: 'supportsAudio', type: 'boolean'},
+    { name: 'url', type: 'string'},
+  ];
+
+  let liveDynamicPlaylist : any = fixJson(liveDynamicPlaylistSpec, rawLiveDynamicPlaylist);
+  return liveDynamicPlaylist;
 }
 
 function fixSerialPortConfiguration(rawSerialPortConfigurations : any) : any {
@@ -142,7 +200,7 @@ function fixSerialPortConfiguration(rawSerialPortConfigurations : any) : any {
     { name:'baudRate', type: 'number'},
     { name:'connectedDevice', type: 'string'},
     { name:'dataBits', type: 'number'},
-    { name:'invertSignals', type: 'bool'},
+    { name:'invertSignals', type: 'boolean'},
     { name:'parity', type: 'string'},
     { name:'port', type: 'number'},
     { name:'protocol', type: 'string'},
