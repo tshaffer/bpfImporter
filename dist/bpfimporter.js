@@ -8514,6 +8514,10 @@ function fixZonePlaylistStates(rawPlaylistItems) {
                 playlistStates.push(fixLiveVideoItem(rawPlaylistItem));
                 break;
             }
+            case 'videoStreamItem': {
+                playlistStates.push(fixVideoStreamItem(rawPlaylistItem));
+                break;
+            }
         }
     });
     return playlistStates;
@@ -8552,6 +8556,24 @@ function fixLiveVideoItem(rawLiveVideoItem) {
     var liveVideoItem = fixJson(liveVideoParametersSpec, rawLiveVideoItem);
     liveVideoItem.type = 'liveVideoItem';
     return liveVideoItem;
+}
+function fixVideoStreamItem(rawVideoStreamItem) {
+    var name = rawVideoStreamItem.streamSpec.$.name;
+    var timeOnScreen = Number(rawVideoStreamItem.streamSpec.$.timeOnScreen);
+    var url = {
+        parameterValue: {
+            parameterValueItemText: {
+                value: rawVideoStreamItem.url.parameterValue.parameterValueItemText.value
+            }
+        }
+    };
+    var videoStreamItem = {
+        name: name,
+        timeOnScreen: timeOnScreen,
+        url: url
+    };
+    videoStreamItem.type = 'videoStreamItem';
+    return videoStreamItem;
 }
 function fixRawFileItem(rawFileItem) {
     var imageItemParametersSpec = [
@@ -8906,9 +8928,22 @@ function buildZonePlaylist(bpfZone, zoneId, dispatch) {
             }
             case 'liveVideoItem': {
                 var overscan = state.overscan, timeOnScreen = state.timeOnScreen, volume = state.volume;
-                debugger;
                 var liveVideoContentItem = bsdatamodel_1.dmCreateLiveVideoContentItem('liveVideo', volume, overscan);
                 var addMediaStateThunkAction = bsdatamodel_1.dmAddMediaState('liveVideo', zone, liveVideoContentItem);
+                var mediaStateAction = dispatch(addMediaStateThunkAction);
+                var mediaStateParams = mediaStateAction.payload;
+                var eventAction = dispatch(bsdatamodel_1.dmAddEvent('timeout', bscore_1.EventType.Timer, mediaStateParams.id, { interval: timeOnScreen }));
+                var eventParams = eventAction.payload;
+                mediaStateIds.push(mediaStateParams.id);
+                eventIds.push(eventParams.id);
+                transitionTypes.push(null);
+                transitionDurations.push(0);
+            }
+            case 'videoStreamItem': {
+                var url = state.url, timeOnScreen = state.timeOnScreen;
+                var urlPS = bsdatamodel_1.dmGetParameterizedStringFromString(url.parameterValue.parameterValueItemText.value);
+                var videoStreamContentItem = bsdatamodel_1.dmCreateVideoStreamContentItem('videoStream', urlPS);
+                var addMediaStateThunkAction = bsdatamodel_1.dmAddMediaState('videoStream', zone, videoStreamContentItem);
                 var mediaStateAction = dispatch(addMediaStateThunkAction);
                 var mediaStateParams = mediaStateAction.payload;
                 var eventAction = dispatch(bsdatamodel_1.dmAddEvent('timeout', bscore_1.EventType.Timer, mediaStateParams.id, { interval: timeOnScreen }));

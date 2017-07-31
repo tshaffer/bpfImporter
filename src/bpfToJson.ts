@@ -279,6 +279,10 @@ function fixZonePlaylistStates(rawPlaylistItems: any) : any {
         playlistStates.push(fixLiveVideoItem(rawPlaylistItem));
         break;
       }
+      case 'videoStreamItem': {
+        playlistStates.push(fixVideoStreamItem(rawPlaylistItem));
+        break;
+      }
     }
   });
   return playlistStates;
@@ -330,6 +334,40 @@ function fixLiveVideoItem(rawLiveVideoItem: any) : any {
   liveVideoItem.type = 'liveVideoItem';
 
   return liveVideoItem;
+}
+
+function fixVideoStreamItem(rawVideoStreamItem: any) : any {
+
+  // TODO
+  // const rawStreamSpec = rawVideoStreamItem.streamSpec;
+  // const streamSpecParametersSpec: any[] = [
+  //   { name: 'name', type: 'string' },
+  //   { name: 'timeOnScreen', type: 'number'},
+  // ];
+  //
+  // let streamSpec : any = fixJson(streamSpecParametersSpec, rawStreamSpec);
+
+  //TODO
+  let name: string = rawVideoStreamItem.streamSpec.$.name;
+  let timeOnScreen: number = Number(rawVideoStreamItem.streamSpec.$.timeOnScreen);
+
+  // TODO
+  let url : any = {
+    parameterValue : {
+      parameterValueItemText: {
+        value: rawVideoStreamItem.url.parameterValue.parameterValueItemText.value
+      }
+    }
+  };
+
+  const videoStreamItem: any = {
+    name,
+    timeOnScreen,
+    url
+  };
+  videoStreamItem.type = 'videoStreamItem';
+
+  return videoStreamItem;
 }
 
 function fixRawFileItem(rawFileItem : any) : any {

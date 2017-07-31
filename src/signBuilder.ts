@@ -50,12 +50,14 @@ import {
   DmImageZonePropertyData,
   DmLiveVideoContentItem,
   DmMediaStateContainer,
+  DmParameterizedString,
   DmSerialPortList,
   DmSignMetadata,
   DmSignProperties,
   DmSignState,
   DmVideoZoneProperties,
   DmVideoZonePropertyData,
+  DmVideoStreamContentItem,
   EventParams,
   MediaStateAction,
   MediaStateParams,
@@ -74,6 +76,8 @@ import {
   dmAddZone,
   dmCreateAssetItemFromLocalFile,
   dmCreateLiveVideoContentItem,
+  dmCreateVideoStreamContentItem,
+  dmGetParameterizedStringFromString,
   dmGetZoneMediaStateContainer,
   dmGetSignState,
   dmNewSign,
@@ -462,8 +466,6 @@ function buildZonePlaylist(bpfZone : any, zoneId : BsDmId, dispatch : Function) 
       case 'liveVideoItem': {
         const { overscan, timeOnScreen, volume } = state;
 
-        debugger;
-
         // TODO - name?
         const liveVideoContentItem : DmLiveVideoContentItem = dmCreateLiveVideoContentItem('liveVideo', volume, overscan)
 
@@ -481,6 +483,27 @@ function buildZonePlaylist(bpfZone : any, zoneId : BsDmId, dispatch : Function) 
         transitionDurations.push(0);
       }
 
+      case 'videoStreamItem': {
+        const { url, timeOnScreen } = state;
+
+        // TODO
+        // const videoStreamContentItem : DmVideoStreamContentItem = dmCreateVideoStreamContentItem('videoStream', url);
+        const urlPS : DmParameterizedString =  dmGetParameterizedStringFromString(url.parameterValue.parameterValueItemText.value);
+        const videoStreamContentItem : DmVideoStreamContentItem = dmCreateVideoStreamContentItem('videoStream', urlPS);
+
+        let addMediaStateThunkAction : BsDmThunkAction<MediaStateParams> = dmAddMediaState('videoStream', zone, videoStreamContentItem);
+        let mediaStateAction : MediaStateAction = dispatch(addMediaStateThunkAction);
+        let mediaStateParams : MediaStateParams = mediaStateAction.payload;
+
+        let eventAction : any = dispatch(dmAddEvent('timeout', EventType.Timer, mediaStateParams.id,
+          { interval : timeOnScreen } ));
+        let eventParams : EventParams = eventAction.payload;
+
+        mediaStateIds.push(mediaStateParams.id);
+        eventIds.push(eventParams.id);
+        transitionTypes.push(null);
+        transitionDurations.push(0);
+      }
       default:
         break;
     }
