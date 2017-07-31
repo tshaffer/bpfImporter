@@ -54,6 +54,8 @@ import {
   DmImageZonePropertyData,
   DmLiveVideoContentItem,
   DmMediaStateContainer,
+  DmMrssDataFeedContentItem,
+  DmNameParam,
   DmParameterizedString,
   DmSerialPortList,
   DmSignMetadata,
@@ -62,6 +64,7 @@ import {
   DmVideoZoneProperties,
   DmVideoZonePropertyData,
   DmVideoStreamContentItem,
+  DmcDataFeed,
   EventParams,
   MediaStateAction,
   MediaStateParams,
@@ -82,7 +85,9 @@ import {
   dmAddZone,
   dmCreateAssetItemFromLocalFile,
   dmCreateLiveVideoContentItem,
+  dmCreateMrssDataFeedContentItem,
   dmCreateVideoStreamContentItem,
+  dmGetDataFeedByName,
   dmGetEmptyParameterizedString,
   dmGetParameterizedStringFromString,
   dmGetZoneMediaStateContainer,
@@ -107,7 +112,7 @@ export function createSign(bpf : any, dispatch: Function, getState: Function) : 
   setSignAudioProperties(bpf, dispatch);
   setSerialPortConfiguration(bpf, dispatch);
   addLiveDataFeeds(bpf.metadata.liveDataFeeds, dispatch);
-  addZones(bpf, dispatch);
+  addZones(bpf, dispatch, getState);
 }
 
 function newSign(bpf : any, dispatch: Function) {
@@ -410,7 +415,7 @@ function fixFilePath(bpfFilePath : string) : string {
 }
 
 
-function buildZonePlaylist(bpfZone : any, zoneId : BsDmId, dispatch : Function) {
+function buildZonePlaylist(bpfZone : any, zoneId : BsDmId, dispatch : Function, getState : Function) {
 
   let mediaStateIds: BsDmId[] = [];
   let eventIds: BsDmId[] = [];
@@ -512,6 +517,28 @@ function buildZonePlaylist(bpfZone : any, zoneId : BsDmId, dispatch : Function) 
         transitionTypes.push(null);
         transitionDurations.push(0);
       }
+      case 'mrssDataFeedItem': {
+
+        const dmcDataFeed : DmcDataFeed = dmGetDataFeedByName(getState().bsdm, { name : state.liveDataFeedName });
+
+        // export function dmCreateMrssDataFeedContentItem(name: string, dataFeedId: BsDmId, videoPlayerRequired?: boolean): DmMrssDataFeedContentItem;
+        const mrssDataFeedContentItem : DmMrssDataFeedContentItem = dmCreateMrssDataFeedContentItem(
+          state.stateName, dmcDataFeed.id, state.videoPlayerRequired);
+
+        let addMediaStateThunkAction : BsDmThunkAction<MediaStateParams> = dmAddMediaState(state.stateName, zone, mrssDataFeedContentItem);
+        let mediaStateAction : MediaStateAction = dispatch(addMediaStateThunkAction);
+        let mediaStateParams : MediaStateParams = mediaStateAction.payload;
+
+        // TODO - timeOnScreen??
+        let eventAction : any = dispatch(dmAddEvent('timeout', EventType.Timer, mediaStateParams.id,
+          { interval : 10 } ));
+        let eventParams : EventParams = eventAction.payload;
+
+        mediaStateIds.push(mediaStateParams.id);
+        eventIds.push(eventParams.id);
+        transitionTypes.push(null);
+        transitionDurations.push(0);
+      }
       default:
         break;
     }
@@ -567,7 +594,7 @@ function addLiveDataFeeds(liveDataFeeds: any, dispatch : Function) {
   });
 }
 
-function addZones(bpf : any, dispatch : Function) {
+function addZones(bpf : any, dispatch : Function, getState : Function) {
 
   bpf.zones.forEach( (bpfZone : any) => {
 
@@ -587,6 +614,6 @@ function addZones(bpf : any, dispatch : Function) {
 
     setZoneProperties(bpfZone, zoneId, zoneType, dispatch);
 
-    buildZonePlaylist(bpfZone, zoneId, dispatch);
+    buildZonePlaylist(bpfZone, zoneId, dispatch, getState);
   });
 }

@@ -341,6 +341,10 @@ function fixZonePlaylistStates(rawPlaylistItems: any) : any {
         playlistStates.push(fixVideoStreamItem(rawPlaylistItem));
         break;
       }
+      case 'mrssDataFeedPlaylistItem': {
+        playlistStates.push(fixMrssDataFeedItem(rawPlaylistItem));
+        break;
+      }
     }
   });
   return playlistStates;
@@ -426,6 +430,21 @@ function fixVideoStreamItem(rawVideoStreamItem: any) : any {
   videoStreamItem.type = 'videoStreamItem';
 
   return videoStreamItem;
+}
+
+function fixMrssDataFeedItem(rawMrssDataFeedItem : any) : any {
+
+  const mrssDataFeedItemParametersSpec: any[] = [
+    { name: 'stateName', type: 'string'},
+    { name: 'liveDataFeedName', type: 'string'},
+    { name: 'usesBSNDynamicPlaylist', type: 'boolean'},
+    { name: 'videoPlayerRequired', type: 'boolean'},
+  ];
+
+  let mrssDataFeedItem: any = fixJson(mrssDataFeedItemParametersSpec, rawMrssDataFeedItem);
+  mrssDataFeedItem.type = 'mrssDataFeedItem';
+
+  return mrssDataFeedItem;
 }
 
 function fixRawFileItem(rawFileItem : any) : any {
