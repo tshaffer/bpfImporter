@@ -132,6 +132,7 @@ function fixMetadata(rawMetadata: any) : any {
   metadata.SerialPortConfigurations = fixSerialPortConfiguration(SerialPortConfiguration);
   metadata.liveDataFeeds = fixLiveDataFeeds(liveDataFeeds);
   metadata.userVariables = fixUserVariables(userVariables);
+  metadata.htmlSites = fixHtmlSites(htmlSites);
 
   return metadata;
 }
@@ -168,6 +169,27 @@ function fixLiveDataFeeds(rawLiveDataFeeds: any) : any {
   }
 
   return liveDataFeeds;
+}
+
+function fixHtmlSites(rawHtmlSites : any) : any {
+
+  // TODO - temporary!! only works for a single local html site
+
+  const htmlSites : any[] = [];
+
+  const htmlSitesSpec: any [] = [
+    { name: 'name', type: 'string'},
+    { name: 'filePath', type: 'string'}
+  ];
+
+  if (rawHtmlSites && rawHtmlSites.localHTMLSite) {
+    let htmlSite : any = fixJson(htmlSitesSpec, rawHtmlSites.localHTMLSite);
+    htmlSite.queryString = '';
+
+    htmlSites.push(htmlSite);
+  }
+
+  return htmlSites;
 }
 
 function fixUserVariables(rawUserVariables: any) : any {
@@ -362,6 +384,10 @@ function fixZonePlaylistStates(rawPlaylistItems: any) : any {
         playlistStates.push(fixMrssDataFeedItem(rawPlaylistItem));
         break;
       }
+      case 'html5Item': {
+        playlistStates.push(fixHtml5Item(rawPlaylistItem));
+        break;
+      }
     }
   });
   return playlistStates;
@@ -462,6 +488,26 @@ function fixMrssDataFeedItem(rawMrssDataFeedItem : any) : any {
   mrssDataFeedItem.type = 'mrssDataFeedItem';
 
   return mrssDataFeedItem;
+}
+
+function fixHtml5Item(rawHtml5Item : any) : any {
+
+  const html5ItemSpec: any[] = [
+    { name: 'name', type: 'string'},
+    { name: 'htmlSiteName', type: 'string'},
+    { name: 'enableExternalData', type: 'boolean'},
+    { name: 'enableMouseEvents', type: 'boolean'},
+    { name: 'displayCursor', type: 'boolean'},
+    { name: 'hwzOn', type: 'boolean'},
+    { name: 'useUserStylesheet', type: 'boolean'},
+    { name: 'timeOnScreen', type: 'number'},
+  ];
+
+  let html5Item: any = fixJson(html5ItemSpec, rawHtml5Item);
+  html5Item.type = 'html5Item';
+  html5Item.userStyleSheet = ''; // TODO
+
+  return html5Item;
 }
 
 function fixRawFileItem(rawFileItem : any) : any {

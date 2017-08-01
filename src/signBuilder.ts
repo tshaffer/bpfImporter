@@ -45,11 +45,13 @@ import {
   BsDmThunkAction,
   DataFeedAction,
   DataFeedParams,
+  DmcHtmlSite,
   DmAudioOutputAssignmentMap,
   DmAudioSignProperties,
   DmAudioSignPropertyMap,
   DmAudioZoneProperties,
   DmAudioZonePropertyData,
+  DmHtmlContentItem,
   DmImageZoneProperties,
   DmImageZonePropertyData,
   DmLiveVideoContentItem,
@@ -66,6 +68,7 @@ import {
   DmVideoStreamContentItem,
   DmcDataFeed,
   EventParams,
+  HtmlSiteLocalAction,
   MediaStateAction,
   MediaStateParams,
   SerialPortListParams,
@@ -80,17 +83,20 @@ import {
   VideoOrImagesZonePropertyParams,
   dmAddBsnDataFeed,
   dmAddEvent,
+  dmAddLocalHtmlSite,
   dmAddMediaState,
   dmAddDataFeed,
   dmAddTransition,
   dmAddUserVariable,
   dmAddZone,
   dmCreateAssetItemFromLocalFile,
+  dmCreateHtmlContentItem,
   dmCreateLiveVideoContentItem,
   dmCreateMrssDataFeedContentItem,
   dmCreateVideoStreamContentItem,
   dmGetDataFeedByName,
   dmGetEmptyParameterizedString,
+  dmGetHtmlSiteByName,
   dmGetParameterizedStringFromString,
   dmGetZoneMediaStateContainer,
   dmGetSignState,
@@ -115,6 +121,7 @@ export function createSign(bpf : any, dispatch: Function, getState: Function) : 
   setSerialPortConfiguration(bpf, dispatch);
   addLiveDataFeeds(bpf.metadata.liveDataFeeds, dispatch);
   addUserVariables(bpf.metadata.userVariables, dispatch, getState);
+  addHtmlSites(bpf.metadata.htmlSites, dispatch, getState);
   addZones(bpf, dispatch, getState);
 }
 
@@ -404,7 +411,10 @@ function fixFilePath(bpfFilePath : string) : string {
 
   let baconFilePath = bpfFilePath;
 
-  if (bpfFilePath.startsWith("\\\\Mac\\Home\\Documents\\All Media\\")) {
+  if (bpfFilePath.startsWith("\\\\Mac\\Home\\Documents\\All Media\\html\\charliessubsT\\index.html")) {
+    baconFilePath = "/Users/tedshaffer/Documents/All Media/html/charliessubsT/index.html";
+  }
+  else if (bpfFilePath.startsWith("\\\\Mac\\Home\\Documents\\All Media\\")) {
 
     const bpfPartialFilePath = bpfFilePath.substr(31);
 
@@ -542,6 +552,31 @@ function buildZonePlaylist(bpfZone : any, zoneId : BsDmId, dispatch : Function, 
         transitionTypes.push(null);
         transitionDurations.push(0);
       }
+      case 'html5Item': {
+        console.log(state);
+
+        let { enableExternalData, enableMouseEvents, displayCursor, htmlSiteName, hwzOn, name, timeOnScreen, type, useUserStylesheet, userStylesheet } = state;
+
+        const dmcHtmlSite: DmcHtmlSite = dmGetHtmlSiteByName(getState().bsdm, { name : htmlSiteName });
+
+        // userStylesheetAssetId - TODO
+        // no customFonts
+        let htmlContentItem : DmHtmlContentItem = dmCreateHtmlContentItem(name, dmcHtmlSite.id, enableExternalData,
+          enableMouseEvents, displayCursor, hwzOn, useUserStylesheet);
+
+        let addMediaStateThunkAction : BsDmThunkAction<MediaStateParams> = dmAddMediaState(state.stateName, zone, htmlContentItem);
+        let mediaStateAction : MediaStateAction = dispatch(addMediaStateThunkAction);
+        let mediaStateParams : MediaStateParams = mediaStateAction.payload;
+
+        let eventAction : any = dispatch(dmAddEvent('timeout', EventType.Timer, mediaStateParams.id,
+          { interval : timeOnScreen } ));
+        let eventParams : EventParams = eventAction.payload;
+
+        mediaStateIds.push(mediaStateParams.id);
+        eventIds.push(eventParams.id);
+        transitionTypes.push(null);
+        transitionDurations.push(0);
+      }
       default:
         break;
     }
@@ -615,6 +650,23 @@ function addUserVariables(userVariables : any, dispatch : Function, getState : F
     dispatch(userVariableAction);
   });
 }
+
+function addHtmlSites(htmlSites : any, dispatch : Function, getState : Function) {
+
+  htmlSites.forEach( (htmlSite : any) => {
+    console.log(htmlSite);
+
+    let { name, filePath } = htmlSite;
+    let queryString = '';
+
+    filePath = fixFilePath(filePath);
+    const bsAssetItem : BsAssetItem = getAssetItemFromFile(filePath);
+
+    const htmlSiteLocalAction : HtmlSiteLocalAction = dmAddLocalHtmlSite(name, bsAssetItem.id, queryString);
+    dispatch(htmlSiteLocalAction);
+  })
+}
+
 
 function addZones(bpf : any, dispatch : Function, getState : Function) {
 
