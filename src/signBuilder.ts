@@ -71,6 +71,7 @@ import {
   SerialPortListParams,
   SignAction,
   TransitionAction,
+  UserVariableAction,
   ZoneAction,
   ZoneParams,
   ZoneChangeParams,
@@ -82,6 +83,7 @@ import {
   dmAddMediaState,
   dmAddDataFeed,
   dmAddTransition,
+  dmAddUserVariable,
   dmAddZone,
   dmCreateAssetItemFromLocalFile,
   dmCreateLiveVideoContentItem,
@@ -112,6 +114,7 @@ export function createSign(bpf : any, dispatch: Function, getState: Function) : 
   setSignAudioProperties(bpf, dispatch);
   setSerialPortConfiguration(bpf, dispatch);
   addLiveDataFeeds(bpf.metadata.liveDataFeeds, dispatch);
+  addUserVariables(bpf.metadata.userVariables, dispatch, getState);
   addZones(bpf, dispatch, getState);
 }
 
@@ -591,6 +594,25 @@ function addLiveDataFeeds(liveDataFeeds: any, dispatch : Function) {
     // TODO - should be creating a dmBsnDataFeed but documentation is not clear to me
     let dataFeedAction : DataFeedAction = dmAddDataFeed(name, url, dataFeedUse, updateInterval, useHeadRequest, '', autoGenerateUserVariables, AccessType.Private);
     dispatch(dataFeedAction);
+  });
+}
+
+function addUserVariables(userVariables : any, dispatch : Function, getState : Function) {
+
+  userVariables.forEach( (userVariable : any) => {
+
+    console.log(userVariable);
+
+    let { access, defaultValue, liveDataFeedName, name, networked, systemVariable } = userVariable;
+
+    let dataFeedId : string = '';
+    if (liveDataFeedName !== '') {
+      const dmcDataFeed : DmcDataFeed = dmGetDataFeedByName(getState().bsdm, { name : liveDataFeedName });
+      dataFeedId = dmcDataFeed.id;
+    }
+
+    let userVariableAction : UserVariableAction = dmAddUserVariable(name, defaultValue, access, networked, dataFeedId, systemVariable);
+    dispatch(userVariableAction);
   });
 }
 

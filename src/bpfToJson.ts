@@ -131,6 +131,7 @@ function fixMetadata(rawMetadata: any) : any {
   metadata.backgroundScreenColor = fixBackgroundScreenColor(backgroundScreenColor);
   metadata.SerialPortConfigurations = fixSerialPortConfiguration(SerialPortConfiguration);
   metadata.liveDataFeeds = fixLiveDataFeeds(liveDataFeeds);
+  metadata.userVariables = fixUserVariables(userVariables);
 
   return metadata;
 }
@@ -149,34 +150,50 @@ function fixLiveDataFeeds(rawLiveDataFeeds: any) : any {
     { name: 'userVariableAccess', type: 'string'},
   ];
 
-  rawLiveDataFeeds.liveDataFeed.forEach( (rawLiveDataFeed: any) => {
-    console.log(rawLiveDataFeed);
+  if (rawLiveDataFeeds && rawLiveDataFeeds.liveDataFeed && Array.isArray(rawLiveDataFeeds.liveDataFeed)) {
+    rawLiveDataFeeds.liveDataFeed.forEach( (rawLiveDataFeed: any) => {
+      console.log(rawLiveDataFeed);
 
-    let liveDataFeed : any = fixJson(liveDataFeedConfigurationSpec, rawLiveDataFeed);
+      let liveDataFeed : any = fixJson(liveDataFeedConfigurationSpec, rawLiveDataFeed);
 
-    // TODO - put following into a function and reuse
-    if (typeof rawLiveDataFeed.parserPluginName === 'string') {
-      liveDataFeed.parserPluginName = rawLiveDataFeed.parserPluginName;
-    }
-    else {
-      liveDataFeed.parserPluginName = '';
-    }
+      liveDataFeed.parserPluginName = fixString(rawLiveDataFeed.parserPluginName);
+      liveDataFeed.uvParserPluginName = fixString(rawLiveDataFeed.uvParserPluginName);
 
-    if (typeof rawLiveDataFeed.uvParserPluginName === 'string') {
-      liveDataFeed.uvParserPluginName = rawLiveDataFeed.uvParserPluginName;
-    }
-    else {
-      liveDataFeed.uvParserPluginName = '';
-    }
-
-    // TODO - currently only supports liveDynamicPlaylist
-    if (rawLiveDataFeed.liveDynamicPlaylist) {
-      liveDataFeed.liveDynamicPlaylist = fixLiveDynamicPlaylist(rawLiveDataFeed.liveDynamicPlaylist);
-    }
-    liveDataFeeds.push(liveDataFeed);
-  });
+      // TODO - currently only supports liveDynamicPlaylist
+      if (rawLiveDataFeed.liveDynamicPlaylist) {
+        liveDataFeed.liveDynamicPlaylist = fixLiveDynamicPlaylist(rawLiveDataFeed.liveDynamicPlaylist);
+      }
+      liveDataFeeds.push(liveDataFeed);
+    });
+  }
 
   return liveDataFeeds;
+}
+
+function fixUserVariables(rawUserVariables: any) : any {
+  console.log(rawUserVariables);
+
+  const userVariables : any[] = [];
+
+  const userVariableConfigurationSpec: any [] = [
+    { name: 'access', type: 'string'},
+    { name: 'defaultValue', type: 'string'},
+    { name: 'name', type: 'string'},
+    { name: 'networked', type: 'boolean'},
+  ];
+
+  if (rawUserVariables && rawUserVariables.userVariable && Array.isArray(rawUserVariables.userVariable)) {
+    rawUserVariables.userVariable.forEach( (rawUserVariable : any) => {
+      let userVariable : any = fixJson(userVariableConfigurationSpec, rawUserVariable);
+      userVariable.liveDataFeedName = fixString(rawUserVariable.liveDataFeedName);
+      // TODO - systemVariable - string?
+      userVariable.systemVariable = fixString(rawUserVariable.systemVariable);
+
+      userVariables.push(userVariable);
+    });
+  }
+
+  return userVariables;
 }
 
 function fixLiveDynamicPlaylist(rawLiveDynamicPlaylist : any) : any {
@@ -501,3 +518,11 @@ function stringToJson(buf : Buffer) : any {
     }
   });
 }
+
+function fixString(rawValue : any) : string {
+  if (typeof rawValue === 'string') {
+    return rawValue;
+  }
+  return '';
+}
+
