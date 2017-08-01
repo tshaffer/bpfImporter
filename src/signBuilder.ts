@@ -89,6 +89,8 @@ import {
   dmAddTransition,
   dmAddUserVariable,
   dmAddZone,
+  dmAppendStringToParameterizedString,
+  dmAppendUserVariableToParameterizedString,
   dmCreateAssetItemFromLocalFile,
   dmCreateHtmlContentItem,
   dmCreateLiveVideoContentItem,
@@ -98,6 +100,8 @@ import {
   dmGetEmptyParameterizedString,
   dmGetHtmlSiteByName,
   dmGetParameterizedStringFromString,
+  dmGetUserVariableById,
+  dmGetUserVariableByName,
   dmGetZoneMediaStateContainer,
   dmGetSignState,
   dmNewSign,
@@ -624,11 +628,30 @@ function addLiveDataFeeds(liveDataFeeds: any, dispatch : Function) {
        fileHash: string;
        creationDate: Date;
        */
+      // dmAddBsnDataFeed(bsnDataFeed: BsnFeedProperties, usage: DataFeedUsageType, name?: string, updateInterval?: number, useHeadRequest?: boolean, parserPlugin?: BsDmId, autoGenerateUserVariables?: boolean, userVariableAccess?: AccessType, supportsAudio?: boolean, matchPlayerTags?: boolean): BsnDataFeedAction;
+      // TODO - should be creating a dmBsnDataFeed but documentation is not clear to me
+    }
+    else {
+      const parameterValue : any = liveDataFeed.url;
+
+      parameterValue.parameterValueItems.forEach( (parameterValueItem : any) => {
+        switch (parameterValueItem.type) {
+          case 'textValue': {
+            url = dmAppendStringToParameterizedString(url, parameterValueItem.textValue);
+            break;
+          }
+          case 'userVariable': {
+            url = dmAppendUserVariableToParameterizedString(url, parameterValueItem.userVariable.name);
+            break;
+          }
+          default: {
+            debugger;
+            break;
+          }
+        }
+      });
     }
 
-    // dmAddBsnDataFeed(bsnDataFeed: BsnFeedProperties, usage: DataFeedUsageType, name?: string, updateInterval?: number, useHeadRequest?: boolean, parserPlugin?: BsDmId, autoGenerateUserVariables?: boolean, userVariableAccess?: AccessType, supportsAudio?: boolean, matchPlayerTags?: boolean): BsnDataFeedAction;
-
-    // TODO - should be creating a dmBsnDataFeed but documentation is not clear to me
     let dataFeedAction : DataFeedAction = dmAddDataFeed(name, url, dataFeedUse, updateInterval, useHeadRequest, '', autoGenerateUserVariables, AccessType.Private);
     dispatch(dataFeedAction);
   });

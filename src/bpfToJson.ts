@@ -178,15 +178,62 @@ function fixLiveDataFeeds(rawLiveDataFeeds: any) : any {
       liveDataFeed.parserPluginName = fixString(rawLiveDataFeed.parserPluginName);
       liveDataFeed.uvParserPluginName = fixString(rawLiveDataFeed.uvParserPluginName);
 
-      // TODO - currently only supports liveDynamicPlaylist
+      // TODO - limited support
       if (rawLiveDataFeed.liveDynamicPlaylist) {
         liveDataFeed.liveDynamicPlaylist = fixLiveDynamicPlaylist(rawLiveDataFeed.liveDynamicPlaylist);
+      }
+      else {    // general url
+        liveDataFeed.url = fixParameterValue(rawLiveDataFeed.url.parameterValue);
       }
       liveDataFeeds.push(liveDataFeed);
     }
   }
 
   return liveDataFeeds;
+}
+
+function fixParameterValue(rawParameterValue : any) : any {
+  console.log(rawParameterValue);
+
+  let parameterValue : any = {};
+  parameterValue.parameterValueItems = [];
+
+  const rawParameterValueItems : any[] = rawParameterValue.$$;
+  rawParameterValueItems.forEach( (rawParameterValueItem : any) => {
+
+    switch (rawParameterValueItem["#name"]) {
+      case 'parameterValueItemText': {
+        let parameterValueItem : any = {
+          type : 'textValue',
+          textValue : rawParameterValueItem.value
+        };
+        parameterValue.parameterValueItems.push(parameterValueItem);
+
+        break;
+      }
+      case 'parameterValueItemUserVariable': {
+
+        const rawUserVariable : any = rawParameterValueItem.userVariable;
+        const userVariable : any = fixUserVariable(rawUserVariable);
+
+        let parameterValueItem : any = {
+          type : 'userVariable',
+          userVariable : userVariable
+        };
+        parameterValue.parameterValueItems.push(parameterValueItem);
+
+        break;
+      }
+      case 'parameterValueItemMediaCounterVariable': {
+        // TODO - not yet supported
+        debugger;
+
+        break;
+      }
+    }
+  });
+
+  return parameterValue;
 }
 
 function fixHtmlSites(rawHtmlSites : any) : any {
@@ -234,6 +281,23 @@ function fixUserVariables(rawUserVariables: any) : any {
   }
 
   return userVariables;
+}
+
+function fixUserVariable(rawUserVariable : any) : any {
+
+  const userVariableConfigurationSpec: any [] = [
+    { name: 'access', type: 'string'},
+    { name: 'defaultValue', type: 'string'},
+    { name: 'name', type: 'string'},
+    { name: 'networked', type: 'boolean'},
+  ];
+
+  let userVariable : any = fixJson(userVariableConfigurationSpec, rawUserVariable);
+  userVariable.liveDataFeedName = fixString(rawUserVariable.liveDataFeedName);
+  // TODO - systemVariable - string?
+  userVariable.systemVariable = fixString(rawUserVariable.systemVariable);
+
+  return userVariable;
 }
 
 function fixLiveDynamicPlaylist(rawLiveDynamicPlaylist : any) : any {
