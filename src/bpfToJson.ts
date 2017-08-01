@@ -269,15 +269,26 @@ function fixUserVariables(rawUserVariables: any) : any {
     { name: 'networked', type: 'boolean'},
   ];
 
-  if (rawUserVariables && rawUserVariables.userVariable && Array.isArray(rawUserVariables.userVariable)) {
-    rawUserVariables.userVariable.forEach( (rawUserVariable : any) => {
+  if (rawUserVariables && rawUserVariables.userVariable) {
+    if (Array.isArray(rawUserVariables.userVariable)) {
+      rawUserVariables.userVariable.forEach( (rawUserVariable : any) => {
+        let userVariable : any = fixJson(userVariableConfigurationSpec, rawUserVariable);
+        userVariable.liveDataFeedName = fixString(rawUserVariable.liveDataFeedName);
+        // TODO - systemVariable - string?
+        userVariable.systemVariable = fixString(rawUserVariable.systemVariable);
+
+        userVariables.push(userVariable);
+      });
+    }
+    else {
+      const rawUserVariable : any = rawUserVariables.userVariable;
       let userVariable : any = fixJson(userVariableConfigurationSpec, rawUserVariable);
       userVariable.liveDataFeedName = fixString(rawUserVariable.liveDataFeedName);
       // TODO - systemVariable - string?
       userVariable.systemVariable = fixString(rawUserVariable.systemVariable);
 
       userVariables.push(userVariable);
-    });
+    }
   }
 
   return userVariables;
