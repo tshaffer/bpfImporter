@@ -151,11 +151,29 @@ function fixLiveDataFeeds(rawLiveDataFeeds: any) : any {
     { name: 'userVariableAccess', type: 'string'},
   ];
 
-  if (rawLiveDataFeeds && rawLiveDataFeeds.liveDataFeed && Array.isArray(rawLiveDataFeeds.liveDataFeed)) {
-    rawLiveDataFeeds.liveDataFeed.forEach( (rawLiveDataFeed: any) => {
+  if (rawLiveDataFeeds && rawLiveDataFeeds.liveDataFeed) {
+
+    if (Array.isArray(rawLiveDataFeeds.liveDataFeed)) {
+      rawLiveDataFeeds.liveDataFeed.forEach((rawLiveDataFeed: any) => {
+        console.log(rawLiveDataFeed);
+
+        let liveDataFeed: any = fixJson(liveDataFeedConfigurationSpec, rawLiveDataFeed);
+
+        liveDataFeed.parserPluginName = fixString(rawLiveDataFeed.parserPluginName);
+        liveDataFeed.uvParserPluginName = fixString(rawLiveDataFeed.uvParserPluginName);
+
+        // TODO - currently only supports liveDynamicPlaylist
+        if (rawLiveDataFeed.liveDynamicPlaylist) {
+          liveDataFeed.liveDynamicPlaylist = fixLiveDynamicPlaylist(rawLiveDataFeed.liveDynamicPlaylist);
+        }
+        liveDataFeeds.push(liveDataFeed);
+      });
+    }
+    else {
+      let rawLiveDataFeed : any = rawLiveDataFeeds.liveDataFeed;
       console.log(rawLiveDataFeed);
 
-      let liveDataFeed : any = fixJson(liveDataFeedConfigurationSpec, rawLiveDataFeed);
+      let liveDataFeed: any = fixJson(liveDataFeedConfigurationSpec, rawLiveDataFeed);
 
       liveDataFeed.parserPluginName = fixString(rawLiveDataFeed.parserPluginName);
       liveDataFeed.uvParserPluginName = fixString(rawLiveDataFeed.uvParserPluginName);
@@ -165,7 +183,7 @@ function fixLiveDataFeeds(rawLiveDataFeeds: any) : any {
         liveDataFeed.liveDynamicPlaylist = fixLiveDynamicPlaylist(rawLiveDataFeed.liveDynamicPlaylist);
       }
       liveDataFeeds.push(liveDataFeed);
-    });
+    }
   }
 
   return liveDataFeeds;

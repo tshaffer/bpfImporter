@@ -551,6 +551,7 @@ function buildZonePlaylist(bpfZone : any, zoneId : BsDmId, dispatch : Function, 
         eventIds.push(eventParams.id);
         transitionTypes.push(null);
         transitionDurations.push(0);
+        break;
       }
       case 'html5Item': {
         console.log(state);
@@ -576,6 +577,7 @@ function buildZonePlaylist(bpfZone : any, zoneId : BsDmId, dispatch : Function, 
         eventIds.push(eventParams.id);
         transitionTypes.push(null);
         transitionDurations.push(0);
+        break;
       }
       default:
         break;
