@@ -517,32 +517,8 @@ function buildZonePlaylist(bpfZone : any, zoneId : BsDmId, dispatch : Function, 
       case 'videoStreamItem': {
 
         const { timeOnScreen } = state;
-        const videoStreamUrl = state.url;
 
-        // TODO - put in common function (addLiveDataFeeds)
-        const parameterValue : any = videoStreamUrl;
-        let url : DmParameterizedString = dmGetEmptyParameterizedString();
-
-        parameterValue.parameterValueItems.forEach( (parameterValueItem : any) => {
-          switch (parameterValueItem.type) {
-            case 'textValue': {
-              url = dmAppendStringToParameterizedString(url, parameterValueItem.textValue);
-              break;
-            }
-            case 'userVariable': {
-              url = dmAppendUserVariableToParameterizedString(url, parameterValueItem.userVariable.name);
-              break;
-            }
-            default: {
-              debugger;
-              break;
-            }
-          }
-        });
-
-        // TODO
-        // const videoStreamContentItem : DmVideoStreamContentItem = dmCreateVideoStreamContentItem('videoStream', url);
-        // const urlPS : DmParameterizedString =  dmGetParameterizedStringFromString(url.parameterValue.parameterValueItemText.value);
+        let url = convertParameterValue(state.url);
         const videoStreamContentItem : DmVideoStreamContentItem = dmCreateVideoStreamContentItem('videoStream', url);
 
         let addMediaStateThunkAction : BsDmThunkAction<MediaStateParams> = dmAddMediaState('videoStream', zone, videoStreamContentItem);
@@ -629,7 +605,7 @@ function convertParameterValue(bpfParameterValue : any) : DmParameterizedString 
   let parameterValue : DmParameterizedString = dmGetEmptyParameterizedString();
 
   bpfParameterValue.parameterValueItems.forEach( (parameterValueItem : any) => {
-    switch (bpfParameterValue.type) {
+    switch (parameterValueItem.type) {
       case 'textValue': {
         parameterValue = dmAppendStringToParameterizedString(parameterValue, parameterValueItem.textValue);
         break;
@@ -656,9 +632,10 @@ function addLiveDataFeeds(liveDataFeeds: any, dispatch : Function) {
 
     // convert parserPluginName to BsDmId and use
     // convert userVariableAccess to AccessType and use
-    let url : DmParameterizedString = dmGetEmptyParameterizedString();
+    let url : DmParameterizedString;
     if (liveDataFeed.liveDynamicPlaylist) {
-      url =  dmGetParameterizedStringFromString(liveDataFeed.liveDynamicPlaylist.url);
+      url = dmGetEmptyParameterizedString();
+      url = dmGetParameterizedStringFromString(liveDataFeed.liveDynamicPlaylist.url);
 
       // const bsnFeedProperties : BsnFeedProperties = {
       //   type: 'BSNDynamicPlaylist',
@@ -681,24 +658,7 @@ function addLiveDataFeeds(liveDataFeeds: any, dispatch : Function) {
       // TODO - should be creating a dmBsnDataFeed but documentation is not clear to me
     }
     else {
-      const parameterValue : any = liveDataFeed.url;
-
-      parameterValue.parameterValueItems.forEach( (parameterValueItem : any) => {
-        switch (parameterValueItem.type) {
-          case 'textValue': {
-            url = dmAppendStringToParameterizedString(url, parameterValueItem.textValue);
-            break;
-          }
-          case 'userVariable': {
-            url = dmAppendUserVariableToParameterizedString(url, parameterValueItem.userVariable.name);
-            break;
-          }
-          default: {
-            debugger;
-            break;
-          }
-        }
-      });
+      url = convertParameterValue(liveDataFeed.url);
     }
 
     let dataFeedAction : DataFeedAction = dmAddDataFeed(name, url, dataFeedUse, updateInterval, useHeadRequest, '', autoGenerateUserVariables, AccessType.Private);
