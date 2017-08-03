@@ -549,14 +549,15 @@ function fixVideoStreamItem(rawVideoStreamItem: any) : any {
   let name: string = rawVideoStreamItem.streamSpec.$.name;
   let timeOnScreen: number = Number(rawVideoStreamItem.streamSpec.$.timeOnScreen);
 
-  // TODO
-  let url : any = {
-    parameterValue : {
-      parameterValueItemText: {
-        value: rawVideoStreamItem.url.parameterValue.parameterValueItemText.value
-      }
-    }
-  };
+  const url : any = fixParameterValue(rawVideoStreamItem.url.parameterValue);
+
+  // let url : any = {
+  //   parameterValue : {
+  //     parameterValueItemText: {
+  //       value: rawVideoStreamItem.url.parameterValue.parameterValueItemText.value
+  //     }
+  //   }
+  // };
 
   const videoStreamItem: any = {
     name,

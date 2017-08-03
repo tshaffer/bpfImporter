@@ -511,15 +511,39 @@ function buildZonePlaylist(bpfZone : any, zoneId : BsDmId, dispatch : Function, 
         eventIds.push(eventParams.id);
         transitionTypes.push(null);
         transitionDurations.push(0);
+        break;
       }
 
       case 'videoStreamItem': {
-        const { url, timeOnScreen } = state;
+
+        const { timeOnScreen } = state;
+        const videoStreamUrl = state.url;
+
+        // TODO - put in common function (addLiveDataFeeds)
+        const parameterValue : any = videoStreamUrl;
+        let url : DmParameterizedString = dmGetEmptyParameterizedString();
+
+        parameterValue.parameterValueItems.forEach( (parameterValueItem : any) => {
+          switch (parameterValueItem.type) {
+            case 'textValue': {
+              url = dmAppendStringToParameterizedString(url, parameterValueItem.textValue);
+              break;
+            }
+            case 'userVariable': {
+              url = dmAppendUserVariableToParameterizedString(url, parameterValueItem.userVariable.name);
+              break;
+            }
+            default: {
+              debugger;
+              break;
+            }
+          }
+        });
 
         // TODO
         // const videoStreamContentItem : DmVideoStreamContentItem = dmCreateVideoStreamContentItem('videoStream', url);
-        const urlPS : DmParameterizedString =  dmGetParameterizedStringFromString(url.parameterValue.parameterValueItemText.value);
-        const videoStreamContentItem : DmVideoStreamContentItem = dmCreateVideoStreamContentItem('videoStream', urlPS);
+        // const urlPS : DmParameterizedString =  dmGetParameterizedStringFromString(url.parameterValue.parameterValueItemText.value);
+        const videoStreamContentItem : DmVideoStreamContentItem = dmCreateVideoStreamContentItem('videoStream', url);
 
         let addMediaStateThunkAction : BsDmThunkAction<MediaStateParams> = dmAddMediaState('videoStream', zone, videoStreamContentItem);
         let mediaStateAction : MediaStateAction = dispatch(addMediaStateThunkAction);
@@ -533,6 +557,7 @@ function buildZonePlaylist(bpfZone : any, zoneId : BsDmId, dispatch : Function, 
         eventIds.push(eventParams.id);
         transitionTypes.push(null);
         transitionDurations.push(0);
+        break;
       }
       case 'mrssDataFeedItem': {
 
@@ -597,6 +622,30 @@ function buildZonePlaylist(bpfZone : any, zoneId : BsDmId, dispatch : Function, 
   const transitionAction : TransitionAction = dispatch(dmAddTransition('', eventIds[mediaStateIds.length - 1],
     mediaStateIds[0], transitionTypes[mediaStateIds.length - 1], transitionDurations[mediaStateIds.length - 1]));
 
+}
+
+function convertParameterValue(bpfParameterValue : any) : DmParameterizedString {
+
+  let parameterValue : DmParameterizedString = dmGetEmptyParameterizedString();
+
+  bpfParameterValue.parameterValueItems.forEach( (parameterValueItem : any) => {
+    switch (bpfParameterValue.type) {
+      case 'textValue': {
+        parameterValue = dmAppendStringToParameterizedString(parameterValue, parameterValueItem.textValue);
+        break;
+      }
+      case 'userVariable': {
+        parameterValue = dmAppendUserVariableToParameterizedString(parameterValue, parameterValueItem.userVariable.name);
+        break;
+      }
+      default: {
+        debugger;
+        break;
+      }
+    }
+  });
+
+  return parameterValue;
 }
 
 function addLiveDataFeeds(liveDataFeeds: any, dispatch : Function) {
